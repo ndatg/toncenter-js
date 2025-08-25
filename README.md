@@ -23,10 +23,6 @@
 
 Go to the [documentation](https://ndatg.github.io/toncenter-js/) for detailed information.
 
-## Migration
-
-If you need an older version of the library, use the [migrate](https://github.com/ndatg/toncenter-js/tree/migrate) branch.
-
 ## 🏗️ Architecture
 
 | Component | Description | Status |
