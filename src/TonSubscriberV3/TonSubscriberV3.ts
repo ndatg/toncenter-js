@@ -54,7 +54,16 @@ export class TonSubscriberV3 extends EventEmitter {
         this.#stopped = false;
         this.#logger.info("start subscriber");
 
-        if (this.#startSeqno <= 0) {
+        if (this.#startSeqno >= 0) {
+            // If starting from a specific seqno, check if we need to reset storage
+            const lastSavedSeqno = await this.#storage.getLastMasterchainBlock();
+            
+            if (lastSavedSeqno !== null && this.#startSeqno < lastSavedSeqno) {
+                // Starting from earlier seqno than saved - clear all blocks to reprocess from startSeqno
+                this.#logger.info(`Starting from earlier seqno (${this.#startSeqno}) than saved (${lastSavedSeqno}), clearing all blocks`);
+                await this.#storage.clean();
+            }
+        } else {
             const masterchainInfo = await this.#api.getMasterchainInfo();
             await sleep(1000);
 
@@ -88,8 +97,10 @@ export class TonSubscriberV3 extends EventEmitter {
 
         while(!this.#stopped) {
             try {
-                const lastSavedSeqno = await this.#storage.getLastMasterchainBlock() || this.#startSeqno;
-                if (!lastSavedSeqno) {
+                const lastSavedSeqno = await this.#storage.getLastMasterchainBlock();
+                const startFromSeqno = lastSavedSeqno ?? this.#startSeqno;
+                
+                if (startFromSeqno < 0) {
                     throw Error("no init masterchain block in storage");
                 }
 
@@ -99,7 +110,8 @@ export class TonSubscriberV3 extends EventEmitter {
                     throw Error("invalid last masterchain block from provider");
                 }
 
-                for (let i = lastSavedSeqno + 1; i <= lastSeqno; i += 1) {
+                const fromSeqno = lastSavedSeqno !== null ? lastSavedSeqno + 1 : this.#startSeqno;
+                for (let i = fromSeqno; i <= lastSeqno; i += 1) {
                     this.#logger.info(`masterchain tick - seqno: ${i}`);
 
                     const getBlock = await this.#api.getBlocks({
@@ -107,6 +119,11 @@ export class TonSubscriberV3 extends EventEmitter {
                         seqno: i,
                         shard: lastMasterchainInfo.last.shard
                     });
+                    
+                    if (!getBlock.blocks || getBlock.blocks.length === 0) {
+                        throw Error(`no blocks returned for seqno: ${i}`);
+                    }
+                    
                     await this.#storage.insertMasterchainBlock(i);
                     this.emit("block", {
                         block: getBlock.blocks[0]
@@ -116,6 +133,7 @@ export class TonSubscriberV3 extends EventEmitter {
                 await sleep(this.#masterchainTickSleepTime);
             } catch (error) {
                 this.#logger.error(`masterchain tick error: ${error}`);
+                await sleep(this.#masterchainTickSleepTime);
             }
         }
     }

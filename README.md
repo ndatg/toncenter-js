@@ -13,6 +13,10 @@
 - 📦 **TypeScript First** - Built with TypeScript, includes full type definitions
 - 🔄 **Real-time Subscriptions** - Subscribe to blockchain events and new blocks
 - 🛠️ **Smart Contract Integration** - Deploy and interact with smart contracts
+- ⚡ **Production Ready** - Comprehensive error handling and retry logic
+- 🔒 **Thread Safe** - Atomic operations prevent race conditions
+- 📊 **Flexible Storage** - Memory and Redis storage options
+- 🔄 **Auto Recovery** - Automatic rollback and state management
 
 ## Documentation
 
@@ -181,7 +185,13 @@ await contract.sendTransfer({
 
 ### 📡 Real-time Block Subscriber V3
 
-Monitor blockchain events in real-time with `TonSubscriberV3`. It automatically handles block synchronization and provides transaction data from both masterchain and shardchains.
+Monitor blockchain events in real-time with `TonSubscriberV3`. It automatically handles block synchronization and provides transaction data from masterchain blocks.
+
+**Key Features:**
+- Automatic rollback when restarting from earlier blocks
+- Comprehensive error handling and retry logic  
+- Optimized storage with proper cleanup
+- Full TypeScript support with proper null handling
 
 ```javascript
 import { 
@@ -201,7 +211,7 @@ const subscriber = new TonSubscriberV3({
     storage: storage,
     // logger: logger,
     // masterchainTickSleepTime: 3000,
-    // startSeqno: 35744539
+    // startSeqno: 35744539  // Automatically rolls back if needed
 });
 await subscriber.start();
 
@@ -228,6 +238,8 @@ subscriber.on("block", async (args: { block: SchemaV3.Block }) => {
                 offset += 256;
             } catch (error) {
                 console.log(error);
+                // Wait before retry to avoid spamming the API
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         } while(!stopped);
 
@@ -241,7 +253,13 @@ subscriber.on("block", async (args: { block: SchemaV3.Block }) => {
 
 ### 📡 Real-time Block Subscriber V2 (Legacy)
 
-For compatibility with V2 API, you can use `TonSubscriberV2` to monitor blockchain events.
+For compatibility with V2 API, you can use `TonSubscriberV2` to monitor blockchain events from both masterchain and shardchains.
+
+**Key Improvements:**
+- Fixed shardchain processing for all workchain blocks
+- Automatic rollback when restarting from earlier blocks  
+- Race condition protection with atomic Redis operations
+- Enhanced error handling with retry logic
 
 ```javascript
 import { 
@@ -262,8 +280,10 @@ const subscriber = new TonSubscriberV2({
     // logger: logger,
     // masterchainTickSleepTime: 3000,
     // shardchainTickSleepTime: 100,
-    // startSeqno: 35744539
+    // startSeqno: 35744539  // Automatically clears storage if rolling back
 });
+
+await subscriber.start();
 
 subscriber.on("block", async (args: { block: SchemaV2.BlockHeader, shards?: SchemaV2.BlockShards }) => {
     try {
@@ -281,6 +301,8 @@ subscriber.on("block", async (args: { block: SchemaV2.BlockHeader, shards?: Sche
                 stopped = true;
             } catch (error) {
                 console.log(error);
+                // Wait before retry to avoid spamming the API
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         } while(!stopped);
 
@@ -289,6 +311,64 @@ subscriber.on("block", async (args: { block: SchemaV2.BlockHeader, shards?: Sche
     } catch (error) {
         console.log(error);
     }
+});
+```
+
+## 🗄️ Storage Options
+
+Both V2 and V3 subscribers support multiple storage backends for block state persistence:
+
+### Memory Storage (Development)
+```typescript
+import { TonMemoryBlockStorageV3 } from "toncenter-js";
+
+const storage = new TonMemoryBlockStorageV3();
+// Data is lost when process restarts
+```
+
+### Redis Storage (Production)
+```typescript
+import { TonRedisBlockStorageV3 } from "toncenter-js";
+
+const storage = new TonRedisBlockStorageV3("redis://:password@127.0.0.1:6379/0");
+// Data persists across restarts
+```
+
+**Storage Features:**
+- Built-in storage cleanup methods
+- Atomic operations prevent race conditions  
+- Proper null handling and validation
+- Automatic storage reset when rolling back
+
+## 🔧 Advanced Configuration
+
+### Error Handling & Retry Logic
+
+The subscribers include comprehensive error handling:
+
+```typescript
+const subscriber = new TonSubscriberV3({
+    api,
+    storage,
+    masterchainTickSleepTime: 5000, // Delay between processing cycles
+    logger: {
+        info: (msg) => console.log(`[INFO] ${msg}`),
+        error: (msg) => console.error(`[ERROR] ${msg}`)
+    }
+});
+```
+
+### Rollback & Recovery
+
+Automatic rollback when restarting from earlier blocks:
+
+```typescript
+// If storage has blocks up to seqno 1000, but you specify startSeqno: 900
+// The subscriber will automatically clear storage and restart from 900
+const subscriber = new TonSubscriberV3({
+    api,
+    storage,
+    startSeqno: 900 // Will trigger automatic rollback if needed
 });
 ```
 

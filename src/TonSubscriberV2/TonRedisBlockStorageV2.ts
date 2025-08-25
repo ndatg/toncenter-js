@@ -20,13 +20,8 @@ export class TonRedisBlockStorageV2 implements TonBlockStorageV2 {
                 continue;
             }
 
-            if (await this.#redis.hexists("ton:shardchain:blocks", `${workchain}_${shard}_${seqno}`)) {
-                continue;
-            }
-
-            await this.#redis.hset("ton:shardchain:blocks", {
-                [`${workchain}_${shard}_${seqno}`]: 0
-            });
+            // Use HSETNX to atomically set only if key doesn't exist
+            await this.#redis.hsetnx("ton:shardchain:blocks", `${workchain}_${shard}_${seqno}`, 0);
         }
     }
 
@@ -35,12 +30,10 @@ export class TonRedisBlockStorageV2 implements TonBlockStorageV2 {
      * @param seqno
      */
     async insertMasterchainBlock(seqno: number) {
-        if (await this.#redis.hexists("ton:masterchain:blocks", `${seqno}`)) {
+        const result = await this.#redis.hsetnx("ton:masterchain:blocks", `${seqno}`, 1);
+        if (result === 0) {
             throw Error(`masterchain block already exists! seqno: ${seqno}`);
         }
-        await this.#redis.hset("ton:masterchain:blocks", {
-            [seqno]: 1
-        });
     }
 
     /**
@@ -59,15 +52,29 @@ export class TonRedisBlockStorageV2 implements TonBlockStorageV2 {
      */
     async getUnprocessedShardchainBlock() {
         const shardchainBlocks = await this.#redis.hgetall("ton:shardchain:blocks");
+        const unprocessedBlocks: { workchain: number, shard: string, seqno: number }[] = [];
+        
         for (const key in shardchainBlocks) {
             if (shardchainBlocks[key] !== undefined && !parseInt(shardchainBlocks[key])) {
                 const data = key.split("_");
-                return {
+                
+                // Validate that we have exactly 3 parts and they are valid
+                if (data.length !== 3 || isNaN(Number(data[0])) || isNaN(Number(data[2]))) {
+                    continue; // Skip invalid keys
+                }
+                
+                unprocessedBlocks.push({
                     workchain: Number(data[0]),
                     shard: data[1],
                     seqno: Number(data[2])
-                };
+                });
             }
+        }
+
+        // Sort by seqno to ensure deterministic processing order (oldest first)
+        if (unprocessedBlocks.length > 0) {
+            unprocessedBlocks.sort((a, b) => a.seqno - b.seqno);
+            return unprocessedBlocks[0];
         }
 
         return null;

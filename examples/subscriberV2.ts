@@ -52,6 +52,8 @@ const main = async () => {
                     stopped = true;
                 } catch (error) {
                     console.log(error);
+                    // Wait before retry to avoid spamming the API
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             } while(!stopped);
 

@@ -3,7 +3,7 @@ import { TonBlockStorageV3 } from "./TonBlockStorageV3";
 export class TonMemoryBlockStorageV3 implements TonBlockStorageV3 {
 
     #masterchainBlocks: {
-        [key: string]: boolean
+        [key: number]: boolean
     };
 
     constructor() {
@@ -28,7 +28,7 @@ export class TonMemoryBlockStorageV3 implements TonBlockStorageV3 {
         const data = Object.keys(this.#masterchainBlocks)
             .map(x => Number(x))
             .sort((a, b) => b - a);
-        return data[0];
+        return data.length > 0 ? data[0] : null;
     }
 
     /**

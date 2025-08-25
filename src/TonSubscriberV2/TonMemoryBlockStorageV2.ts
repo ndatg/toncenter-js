@@ -4,7 +4,7 @@ import { BlockIdExt } from "../TonHttpApiV2/SchemaV2";
 export class TonMemoryBlockStorageV2 implements TonBlockStorageV2 {
 
     #masterchainBlocks: {
-        [key: string]: boolean
+        [key: number]: boolean
     };
 
     #shardchainBlocks: {
@@ -52,22 +52,37 @@ export class TonMemoryBlockStorageV2 implements TonBlockStorageV2 {
         const data = Object.keys(this.#masterchainBlocks)
             .map(x => Number(x))
             .sort((a, b) => b - a);
-        return data[0];
+        return data.length > 0 ? data[0] : null;
     }
 
     /**
      * Get the last unprocessed shardchain block from the shardchains hashtable.
      */
     async getUnprocessedShardchainBlock() {
+        // Get all unprocessed blocks and sort them by seqno for deterministic order
+        const unprocessedBlocks: { workchain: number, shard: string, seqno: number }[] = [];
+        
         for (const key in this.#shardchainBlocks) {
             if (!this.#shardchainBlocks[key]) {
                 const data = key.split("_");
-                return {
+                
+                // Validate that we have exactly 3 parts and they are valid
+                if (data.length !== 3 || isNaN(Number(data[0])) || isNaN(Number(data[2]))) {
+                    continue; // Skip invalid keys
+                }
+                
+                unprocessedBlocks.push({
                     workchain: Number(data[0]),
                     shard: data[1],
                     seqno: Number(data[2])
-                };
+                });
             }
+        }
+
+        // Sort by seqno to ensure deterministic processing order (oldest first)
+        if (unprocessedBlocks.length > 0) {
+            unprocessedBlocks.sort((a, b) => a.seqno - b.seqno);
+            return unprocessedBlocks[0];
         }
 
         return null;

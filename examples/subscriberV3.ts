@@ -58,6 +58,8 @@ const main = async () => {
                     offset += 256;
                 } catch (error) {
                     console.log(error);
+                    // Wait before retry to avoid spamming the API
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             } while(!stopped);
 

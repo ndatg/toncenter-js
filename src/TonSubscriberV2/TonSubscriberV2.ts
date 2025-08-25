@@ -64,10 +64,19 @@ export class TonSubscriberV2 extends EventEmitter {
         this.#logger.info("start subscriber");
 
         if (this.#startSeqno >= 0) {
+            // If starting from a specific seqno, check if we need to reset storage
+            const lastSavedSeqno = await this.#storage.getLastMasterchainBlock();
+            
+            if (lastSavedSeqno !== null && this.#startSeqno < lastSavedSeqno) {
+                // Starting from earlier seqno than saved - clear all blocks to reprocess from startSeqno
+                this.#logger.info(`Starting from earlier seqno (${this.#startSeqno}) than saved (${lastSavedSeqno}), clearing all blocks`);
+                await this.#storage.clean();
+            }
+
             const startMasterchainBlockHeader = await this.#api.getMasterchainBlockHeader(this.#startSeqno);
             await sleep(1000);
 
-            this.#startLT = BigInt(startMasterchainBlockHeader.end_lt);
+            this.#startLT = BigInt(startMasterchainBlockHeader.start_lt); // Используем start_lt вместо end_lt
         } else {
             const masterchainInfo = await this.#api.getMasterchainInfo();
             await sleep(1000);
@@ -76,7 +85,7 @@ export class TonSubscriberV2 extends EventEmitter {
             await sleep(1000);
 
             this.#startSeqno = masterchainInfo.last.seqno;
-            this.#startLT = BigInt(startMasterchainBlockHeader.end_lt);
+            this.#startLT = BigInt(startMasterchainBlockHeader.start_lt); // Используем start_lt вместо end_lt
         }
 
         this.masterchainTick();
@@ -107,8 +116,10 @@ export class TonSubscriberV2 extends EventEmitter {
 
         while(!this.#stopped) {
             try {
-                const lastSavedSeqno = await this.#storage.getLastMasterchainBlock() || this.#startSeqno;
-                if (!lastSavedSeqno) {
+                const lastSavedSeqno = await this.#storage.getLastMasterchainBlock();
+                const startFromSeqno = lastSavedSeqno ?? this.#startSeqno;
+                
+                if (startFromSeqno < 0) {
                     throw Error("no init masterchain block in storage");
                 }
 
@@ -118,7 +129,8 @@ export class TonSubscriberV2 extends EventEmitter {
                     throw Error("invalid last masterchain block from provider");
                 }
 
-                for (let i = lastSavedSeqno + 1; i <= lastSeqno; i += 1) {
+                const fromSeqno = lastSavedSeqno !== null ? lastSavedSeqno + 1 : this.#startSeqno;
+                for (let i = fromSeqno; i <= lastSeqno; i += 1) {
                     this.#logger.info(`masterchain tick - seqno: ${i}`);
 
                     const getBlock = await this.#api.getMasterchainBlockHeader(i);
@@ -135,6 +147,7 @@ export class TonSubscriberV2 extends EventEmitter {
                 await sleep(this.#masterchainTickSleepTime);
             } catch (error) {
                 this.#logger.error(`masterchain tick error: ${error}`);
+                await sleep(this.#masterchainTickSleepTime);
             }
         }
     }
@@ -154,19 +167,16 @@ export class TonSubscriberV2 extends EventEmitter {
 
                     const getBlock = await this.#api.getBlockHeader(workchain, shard, seqno);
 
-                    if (BigInt(getBlock.end_lt) < this.#startLT) {
-                        await this.#storage.setShardchainBlockProcessed(workchain, shard, seqno, []);
-                    } else {
-                        await this.#storage.setShardchainBlockProcessed(workchain, shard, seqno, getBlock.prev_blocks);
-                        this.emit("block", {
-                            block: getBlock
-                        });
-                    }
+                    await this.#storage.setShardchainBlockProcessed(workchain, shard, seqno, getBlock.prev_blocks);
+                    this.emit("block", {
+                        block: getBlock
+                    });
                 }
 
                 await sleep(this.#shardchainTickSleepTime);
             } catch (error) {
                 this.#logger.error(`shardchain tick error: ${error}`);
+                await sleep(this.#shardchainTickSleepTime);
             }
         }
 

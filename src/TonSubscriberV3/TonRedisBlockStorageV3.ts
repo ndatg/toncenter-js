@@ -14,12 +14,10 @@ export class TonRedisBlockStorageV3 implements TonBlockStorageV3 {
      * @param seqno
      */
     async insertMasterchainBlock(seqno: number) {
-        if (await this.#redis.hexists("ton:masterchain:blocks", `${seqno}`)) {
+        const result = await this.#redis.hsetnx("ton:masterchain:blocks", `${seqno}`, 1);
+        if (result === 0) {
             throw Error(`masterchain block already exists! seqno: ${seqno}`);
         }
-        await this.#redis.hset("ton:masterchain:blocks", {
-            [seqno]: 1
-        });
     }
 
     /**
