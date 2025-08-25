@@ -486,7 +486,7 @@ export class TonHttpApiV2 {
             {
                 method,
                 params,
-                id: "@ton/toncenter",
+                id: "toncenter-js",
                 jsonrpc: "2.0"
             },
             config

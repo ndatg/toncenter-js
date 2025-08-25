@@ -1,11 +1,11 @@
-# @ton/toncenter
+# toncenter-js
 
-[![npm version](https://img.shields.io/npm/v/@ton/toncenter.svg)](https://www.npmjs.com/package/@ton/toncenter)
+[![npm version](https://img.shields.io/npm/v/toncenter-js.svg)](https://www.npmjs.com/package/toncenter-js)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![Downloads](https://img.shields.io/npm/dm/@ton/toncenter.svg)](https://www.npmjs.com/package/@ton/toncenter)
+[![Downloads](https://img.shields.io/npm/dm/toncenter-js.svg)](https://www.npmjs.com/package/toncenter-js)
 
-**@ton/toncenter** is a comprehensive TypeScript/JavaScript SDK for interacting with the TON blockchain via Toncenter API. It provides a simple and powerful interface for working with TON smart contracts, transactions, and blockchain data.
+**toncenter-js** is a comprehensive TypeScript/JavaScript SDK for interacting with the TON blockchain via Toncenter API. It provides a simple and powerful interface for working with TON smart contracts, transactions, and blockchain data.
 
 ## ✨ Features
 
@@ -38,21 +38,21 @@ If you need an older version of the library, use the [migrate](https://github.co
 ## 📦 Installation
 
 ```bash
-npm install @ton/toncenter
+npm install toncenter-js
 ```
 
 ```bash
-yarn add @ton/toncenter
+yarn add toncenter-js
 ```
 
 ```bash
-pnpm add @ton/toncenter
+pnpm add toncenter-js
 ```
 
 ## 🚀 Quick Start
 
 ```typescript
-import { TonHttpApiV3 } from "@ton/toncenter";
+import { TonHttpApiV3 } from "toncenter-js";
 
 // Initialize API client
 const api = new TonHttpApiV3({
@@ -76,7 +76,7 @@ console.log(info);
 The latest and most feature-rich API version with improved performance and additional endpoints.
 
 ```typescript
-import { TonHttpApiV3 } from "@ton/toncenter";
+import { TonHttpApiV3 } from "toncenter-js";
 
 const api = new TonHttpApiV3({
     endpoint: "https://toncenter.com/",
@@ -109,7 +109,7 @@ const jettonWallets = await api.getJettonWallets({
 For compatibility with older integrations, you can still use the V2 API.
 
 ```typescript
-import { TonHttpApiV2 } from "@ton/toncenter";
+import { TonHttpApiV2 } from "toncenter-js";
 
 const api = new TonHttpApiV2({
     endpoint: "https://toncenter.com/",
@@ -141,7 +141,7 @@ npm install ton-highload-wallet-contract @ton/crypto @ton/core --save
 ```
 
 ```javascript
-import { TonClientV3 } from "@ton/toncenter";
+import { TonClientV3 } from "toncenter-js";
 import { HighloadWalletContractV2 } from "ton-highload-wallet-contract";
 import { mnemonicToPrivateKey } from "@ton/crypto";
 import { internal } from "@ton/core";
@@ -187,7 +187,7 @@ Monitor blockchain events in real-time with `TonSubscriberV3`. It automatically 
 import { 
     TonHttpApiV3, TonSubscriberV3, 
     TonMemoryBlockStorageV3, SchemaV3 
-} from "@ton/toncenter";
+} from "toncenter-js";
 
 const api = new TonHttpApiV3({
     endpoint: "https://toncenter.com/",
@@ -247,7 +247,7 @@ For compatibility with V2 API, you can use `TonSubscriberV2` to monitor blockcha
 import { 
     TonHttpApiV2, TonSubscriberV2, 
     TonMemoryBlockStorageV2, SchemaV2 
-} from "@ton/toncenter";
+} from "toncenter-js";
 
 const api = new TonHttpApiV2({
     endpoint: "https://toncenter.com/",
@@ -299,7 +299,7 @@ This project is licensed under the MIT License - see the [LICENSE](https://githu
 ## 🔗 Links
 
 - **Documentation**: [https://ndatg.github.io/toncenter-js/](https://ndatg.github.io/toncenter-js/)
-- **NPM Package**: [https://www.npmjs.com/package/@ton/toncenter](https://www.npmjs.com/package/@ton/toncenter)
+- **NPM Package**: [https://www.npmjs.com/package/toncenter-js](https://www.npmjs.com/package/toncenter-js)
 - **GitHub**: [https://github.com/ndatg/toncenter-js](https://github.com/ndatg/toncenter-js)
 - **Toncenter API**: [https://toncenter.com/](https://toncenter.com/)
 - **TON Documentation**: [https://docs.ton.org/](https://docs.ton.org/)
