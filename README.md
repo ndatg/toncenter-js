@@ -17,6 +17,7 @@
 - 🔒 **Thread Safe** - Atomic operations prevent race conditions
 - 📊 **Flexible Storage** - Memory and Redis storage options
 - 🔄 **Auto Recovery** - Automatic rollback and state management
+- 🔗 **Backward Compatibility** - Supports multiple endpoint formats for seamless migration
 
 ## Documentation
 
@@ -130,6 +131,26 @@ const transactions = await api.getTransactions(
     { limit: 10 }
 );
 console.log("Transactions:", transactions);
+```
+
+#### 🔄 Endpoint Backward Compatibility
+
+TonHttpApiV2 now supports both endpoint formats for maximum compatibility:
+
+```typescript
+// Base URL format (original)
+const api1 = new TonHttpApiV2({
+    endpoint: "https://toncenter.com/",
+    apiKey: "your-api-key"
+});
+
+// Full API path format (new, backward compatible)
+const api2 = new TonHttpApiV2({
+    endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+    apiKey: "your-api-key"
+});
+
+// Both formats work identically - the library automatically handles the differences
 ```
 
 ### 🔧 Smart Contract Integration

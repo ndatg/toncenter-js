@@ -3,7 +3,7 @@ import { sleep } from "../utils";
 
 describe("TonHttpApiV2", () => {
     const api = new TonHttpApiV2({
-        endpoint: "https://toncenter.com/",
+        endpoint: "https://toncenter.com/api/v2/jsonRPC",
         apiKey: ""
     });
 

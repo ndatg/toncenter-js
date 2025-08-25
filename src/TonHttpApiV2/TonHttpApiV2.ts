@@ -5,6 +5,11 @@ import * as Schema from "./SchemaV2";
 
 export interface TonHttpApiV2Parameters {
 
+    /**
+     * API endpoint. Supports both base URL format (e.g., "https://toncenter.com/") 
+     * and full API path format (e.g., "https://testnet.toncenter.com/api/v2/jsonRPC") 
+     * for backward compatibility.
+     */
     endpoint: string;
 
     apiKey?: string;
@@ -26,7 +31,12 @@ export class TonHttpApiV2 {
     readonly #adapter?: AxiosAdapter;
 
     constructor(params: TonHttpApiV2Parameters) {
-        this.#endpoint = params.endpoint;
+        // Normalize endpoint - remove /api/v2/jsonRPC if present for backward compatibility
+        let endpoint = params.endpoint;
+        if (endpoint.includes('/api/v2/jsonRPC')) {
+            endpoint = endpoint.replace(/\/api\/v2\/jsonRPC\/?$/, '');
+        }
+        this.#endpoint = endpoint;
         this.#timeout = params?.timeout || 10_000;
         this.#apiKey = params?.apiKey && params.apiKey.trim() !== "" ? params.apiKey : undefined;
         this.#adapter = params?.adapter;
