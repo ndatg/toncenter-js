@@ -934,7 +934,12 @@ export class TonHttpApiV3 {
 
         const decoded = returnSchema.safeParse(response.data);
         if (!decoded.success) {
-            throw Error("Broken response received: " + decoded.error.format()._errors.join(", "));
+            throw Error(
+                "Broken response received: " + 
+                JSON.stringify(decoded.error.format(), null, 2) + 
+                "\n\nReceived data: " + 
+                JSON.stringify(response.data, null, 2)
+            );
         }
 
         return decoded.data;
@@ -976,7 +981,12 @@ export class TonHttpApiV3 {
 
         const decoded = returnSchema.safeParse(response.data);
         if (!decoded.success) {
-            throw Error("Broken response received: " + decoded.error.format()._errors.join(", "));
+            throw Error(
+                "Broken response received: " + 
+                JSON.stringify(decoded.error.format(), null, 2) + 
+                "\n\nReceived data: " + 
+                JSON.stringify(response.data, null, 2)
+            );
         }
 
         return decoded.data;

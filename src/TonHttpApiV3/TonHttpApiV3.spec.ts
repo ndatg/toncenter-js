@@ -83,7 +83,7 @@ describe("TonHttpApiV3", () => {
     });
 
     it("should get transactions by masterchain block", async () => {
-        const data = await api.getTransactionsByMasterchainBlock(35878012);
+        const data = await api.getTransactionsByMasterchainBlock(52669600);
         console.log(data);
     });
 

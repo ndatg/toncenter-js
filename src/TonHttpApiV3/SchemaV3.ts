@@ -50,6 +50,7 @@ export const accountState = z.object({
     hash: z.string(),
     // account: z.string(),
     balance: z.string().nullable(),
+    extra_currencies: z.record(z.string(), z.string()).nullable().optional(),
     account_status: accountStatus.nullable(),
     frozen_hash: z.string().nullable(),
     code_hash: z.string().nullable(),
@@ -152,7 +153,8 @@ export const messageContent = z.object({
     body: z.string(),
     decoded: z.union([
         textComment,
-        binaryComment
+        binaryComment,
+        z.object({ type: z.string(), data: z.any() })  // For other decoded types like empty_cell, nft_*, jetton_*, etc.
     ]).nullable()
 });
 export type MessageContent = z.infer<typeof messageContent>;
