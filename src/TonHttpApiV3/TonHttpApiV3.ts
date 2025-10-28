@@ -13,6 +13,13 @@ export interface TonHttpApiV3Parameters {
 
     adapter?: AxiosAdapter;
 
+    /**
+     * If true, will throw error on schema validation failure.
+     * If false, will log warning and return data as is.
+     * Default: false (lenient mode)
+     */
+    strictValidation?: boolean;
+
 }
 
 export class TonHttpApiV3 {
@@ -25,11 +32,14 @@ export class TonHttpApiV3 {
 
     readonly #adapter?: AxiosAdapter;
 
+    readonly #strictValidation: boolean;
+
     constructor(params: TonHttpApiV3Parameters) {
         this.#endpoint = params.endpoint;
         this.#timeout = params?.timeout || 10_000;
         this.#apiKey = params?.apiKey && params.apiKey.trim() !== "" ? params.apiKey : undefined;
         this.#adapter = params?.adapter;
+        this.#strictValidation = params?.strictValidation ?? false;
     }
 
     /**
@@ -934,12 +944,21 @@ export class TonHttpApiV3 {
 
         const decoded = returnSchema.safeParse(response.data);
         if (!decoded.success) {
-            throw Error(
-                "Broken response received: " + 
-                JSON.stringify(decoded.error.format(), null, 2) + 
-                "\n\nReceived data: " + 
-                JSON.stringify(response.data, null, 2)
-            );
+            if (this.#strictValidation) {
+                throw Error(
+                    "Broken response received: " + 
+                    JSON.stringify(decoded.error.format(), null, 2) + 
+                    "\n\nReceived data: " + 
+                    JSON.stringify(response.data, null, 2)
+                );
+            } else {
+                // Lenient mode: log warning and return raw data
+                console.warn(
+                    `[TonHttpApiV3] Schema validation warning for ${method}:`,
+                    decoded.error.issues.slice(0, 5).map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ')
+                );
+                return response.data as T;
+            }
         }
 
         return decoded.data;
@@ -981,12 +1000,21 @@ export class TonHttpApiV3 {
 
         const decoded = returnSchema.safeParse(response.data);
         if (!decoded.success) {
-            throw Error(
-                "Broken response received: " + 
-                JSON.stringify(decoded.error.format(), null, 2) + 
-                "\n\nReceived data: " + 
-                JSON.stringify(response.data, null, 2)
-            );
+            if (this.#strictValidation) {
+                throw Error(
+                    "Broken response received: " + 
+                    JSON.stringify(decoded.error.format(), null, 2) + 
+                    "\n\nReceived data: " + 
+                    JSON.stringify(response.data, null, 2)
+                );
+            } else {
+                // Lenient mode: log warning and return raw data
+                console.warn(
+                    `[TonHttpApiV3] Schema validation warning for ${method}:`,
+                    decoded.error.issues.slice(0, 5).map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ')
+                );
+                return response.data as T;
+            }
         }
 
         return decoded.data;

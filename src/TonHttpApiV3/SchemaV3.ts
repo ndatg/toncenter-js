@@ -135,15 +135,18 @@ export type MasterchainBlockShards = z.infer<typeof masterchainBlockShards>;
 
 // TextComment
 export const textComment = z.object({
-    type: z.literal("text_comment"),
-    comment: z.string()
+    type: z.literal("text_comment").optional(),
+    "@type": z.literal("text_comment").optional(),
+    comment: z.string().optional(),
+    text: z.string().optional() // Some API responses use 'text' instead of 'comment'
 });
 export type TextComment = z.infer<typeof textComment>;
 
 // BinaryComment
 export const binaryComment = z.object({
-    type: z.literal("binary_comment"),
-    hex_comment: z.string()
+    type: z.literal("binary_comment").optional(),
+    "@type": z.literal("binary_comment").optional(),
+    hex_comment: z.string().optional()
 });
 export type BinaryComment = z.infer<typeof binaryComment>;
 
@@ -154,7 +157,7 @@ export const messageContent = z.object({
     decoded: z.union([
         textComment,
         binaryComment,
-        z.object({ type: z.string(), data: z.any() })  // For other decoded types like empty_cell, nft_*, jetton_*, etc.
+        z.object({}).passthrough()  // Allow any object structure for other decoded types like empty_cell, nft_*, jetton_*, etc.
     ]).nullable()
 });
 export type MessageContent = z.infer<typeof messageContent>;
